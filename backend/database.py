@@ -1,5 +1,7 @@
 import asyncpg
 import json
+from typing import Optional, List, Tuple
+from schemas import UserResponse, PhotoResponse, UserStatsResponse, UserActionResponse
 
 class config:
     TOKEN = "8206728038:AAH754lDqFBm7WmTH3wlMV1m3qvwL52LT-o"
@@ -127,15 +129,17 @@ async def set_subscription(pool, user_id, value: bool, duration_days=30):
             user_id, "subscription_changed", details_str
         )
 
-async def get_user_info(pool, user_id):
-    """Получение информации о пользователе"""
+async def get_user_info(pool, user_id) -> Optional[UserResponse]:
+    """Получение информации о пользователе с валидацией"""
     async with pool.acquire() as conn:
         user = await conn.fetchrow(
             "SELECT * FROM users WHERE user_id = $1", user_id
         )
-        return dict(user) if user else None
+        if user:
+            return UserResponse(**dict(user))
+        return None
 
-async def get_user_photos_count(pool, user_id):
+async def get_user_photos_count(pool, user_id) -> int:
     """Количество фото пользователя"""
     async with pool.acquire() as conn:
         count = await conn.fetchval(
@@ -143,12 +147,30 @@ async def get_user_photos_count(pool, user_id):
         )
         return count
 
-async def get_user_stats(pool, user_id):
-    """Полная статистика пользователя"""
+async def get_user_stats(pool, user_id) -> UserStatsResponse:
+    """Полная статистика пользователя с валидацией"""
     async with pool.acquire() as conn:
         user = await get_user_info(pool, user_id)
         photos_count = await get_user_photos_count(pool, user_id)
-        return user, photos_count
+        return UserStatsResponse(user=user, photos_count=photos_count)
+    
+async def get_user_photos(pool, user_id) -> List[PhotoResponse]:
+    """Получить все фото пользователя с валидацией"""
+    async with pool.acquire() as conn:
+        photos = await conn.fetch(
+            "SELECT * FROM photos WHERE user_id = $1 ORDER BY created_at DESC", 
+            user_id
+        )
+        return [PhotoResponse(**dict(photo)) for photo in photos]
+    
+async def get_user_actions(pool, user_id, limit: int = 10) -> List[UserActionResponse]:
+    """Получить действия пользователя с валидацией"""
+    async with pool.acquire() as conn:
+        actions = await conn.fetch(
+            "SELECT * FROM user_actions WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2",
+            user_id, limit
+        )
+        return [UserActionResponse(**dict(action)) for action in actions]
 
 async def check_subscription(pool, user_id):
     """Проверка активной подписки"""
@@ -188,3 +210,4 @@ async def show_tables(pool):
         actions = await conn.fetch("SELECT * FROM user_actions")
         for action in actions:
             print(dict(action))
+
