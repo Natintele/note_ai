@@ -1,56 +1,13 @@
-# import asyncpg
-# import config
-
-# async def create_pool():
-#     return await asyncpg.create_pool(
-#         user=config.DB_USER,
-#         password=config.DB_PASS,
-#         database=config.DB_NAME,
-#         host=config.DB_HOST,
-#         port=config.DB_PORT
-#     )
-
-# async def init_db(pool):
-#     async with pool.acquire() as conn:
-#         await conn.execute("""
-#         CREATE TABLE IF NOT EXISTS users (
-#             user_id BIGINT PRIMARY KEY,
-#             username TEXT,
-#             subscription BOOLEAN DEFAULT FALSE
-#         )
-#         """)
-#         await conn.execute("""
-#         CREATE TABLE IF NOT EXISTS photos (
-#             id SERIAL PRIMARY KEY,
-#             user_id BIGINT REFERENCES users(user_id),
-#             file_id TEXT,
-#             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-#         )
-#         """)
-
-# async def add_user(pool, user_id, username):
-#     async with pool.acquire() as conn:
-#         await conn.execute(
-#             "INSERT INTO users(user_id, username) VALUES($1, $2) ON CONFLICT DO NOTHING",
-#             user_id, username
-#         )
-
-# async def add_photo(pool, user_id, file_id):
-#     async with pool.acquire() as conn:
-#         await conn.execute(
-#             "INSERT INTO photos(user_id, file_id) VALUES($1, $2)",
-#             user_id, file_id
-#         )
-
-# async def set_subscription(pool, user_id, value: bool):
-#     async with pool.acquire() as conn:
-#         await conn.execute(
-#             "UPDATE users SET subscription=$1 WHERE user_id=$2",
-#             value, user_id
-#         )
 import asyncpg
-import config
 import json
+
+class config:
+    TOKEN = "8206728038:AAH754lDqFBm7WmTH3wlMV1m3qvwL52LT-o"
+    DB_HOST = "localhost"
+    DB_NAME = "mydatabase"
+    DB_USER = "postgres"
+    DB_PASS = "ConspectAI"
+    DB_PORT = 5432
 
 async def create_pool():
     return await asyncpg.create_pool(
